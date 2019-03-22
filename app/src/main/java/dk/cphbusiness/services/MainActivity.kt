@@ -21,11 +21,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         registerReceiver(SmsFilterReceiver(), IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION))
+        val request = PeriodicWorkRequestBuilder<WaitWorker>(Duration.ofSeconds(30L)).build()
         work_button.onClick {
             toast("Work button clicked")
             // val request = OneTimeWorkRequest.from(WaitWorker::class.java)
-            val request = PeriodicWorkRequestBuilder<WaitWorker>(Duration.ofSeconds(30L)).build()
             workManager.enqueue(request)
+            }
+        stop_work_button.onClick {
+            workManager.cancel(request)
             }
         service_button.onClick {
             startService(intentFor<WaitingService>())
@@ -33,6 +36,8 @@ class MainActivity : AppCompatActivity() {
 
     }
 }
+
+fun WorkManager.cancel(request: WorkRequest) { this.cancelWorkById(request.id) }
 
 class WaitWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
     override fun doWork(): Result {
@@ -45,4 +50,10 @@ class WaitWorker(context: Context, params: WorkerParameters) : Worker(context, p
         Log.d("WORK", "... Done!")
         return Result.success()
         }
+
+    override fun onStopped() {
+        Log.d("WORK", "Stopped!")
+        super.onStopped()
+        }
+
     }
